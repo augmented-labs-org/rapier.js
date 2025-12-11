@@ -1,4 +1,4 @@
-import {RawColliderSet} from "../raw";
+import {RawColliderSet, RawCompoundShapePart} from "../raw";
 import {Rotation, RotationOps, Vector, VectorOps} from "../math";
 import {
     CoefficientCombineRule,
@@ -37,6 +37,8 @@ import {
     RoundConvexPolyhedron,
     HeightFieldFlags,
     // #endif
+    Compound,
+    CompoundShapePart,
 } from "./shape";
 import {Ray, RayIntersection} from "./ray";
 import {PointProjection} from "./point";
@@ -1300,6 +1302,19 @@ export class ColliderDesc {
         this.principalAngularInertia = VectorOps.zeros();
         this.angularInertiaLocalFrame = RotationOps.identity();
         // #endif
+    }
+
+    /**
+     * Creates a new collider descriptor with a heightfield shape.
+     *
+     * @param heights - The heights of the heightfield, along its local `y` axis.
+     * @param scale - The scale factor applied to the heightfield.
+     */
+    public static compound(
+        shapes: CompoundShapePart[],
+    ): ColliderDesc {
+        const shape = new Compound(shapes);
+        return new ColliderDesc(shape);
     }
 
     /**

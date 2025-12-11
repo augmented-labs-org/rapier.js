@@ -1,5 +1,5 @@
-import {Vector, VectorOps, Rotation, RotationOps} from "../math";
-import {RawColliderSet, RawShape, RawShapeType} from "../raw";
+import {Vector, VectorOps, Rotation, RotationOps, Isometry, IsometryOps} from "../math";
+import {RawColliderSet, RawCompoundShapePart, RawShape, RawShapeType, RawIsometry} from "../raw";
 import {ShapeContact} from "./contact";
 import {PointProjection} from "./point";
 import {Ray, RayIntersection} from "./ray";
@@ -156,6 +156,12 @@ export abstract class Shape {
                 const hf_flags = rawSet.coHeightFieldFlags(handle);
                 return new Heightfield(nrows, ncols, heights, scale, hf_flags);
             // #endif
+
+            case RawShapeType.Compound:
+                // Note: Compound shapes cannot be fully reconstructed from the collider set
+                // because there's no API to extract the compound's sub-shapes.
+                // Return an empty compound as a placeholder.
+                return new Compound([]);
 
             // #if DIM2
             case RawShapeType.ConvexPolygon:
@@ -515,7 +521,7 @@ export enum ShapeType {
     Triangle = 5,
     TriMesh = 6,
     HeightField = 7,
-    // Compound = 8,
+    Compound = 8,
     ConvexPolygon = 9,
     RoundCuboid = 10,
     RoundTriangle = 11,
@@ -540,7 +546,7 @@ export enum ShapeType {
     Triangle = 5,
     TriMesh = 6,
     HeightField = 7,
-    // Compound = 8,
+    Compound = 8,
     ConvexPolyhedron = 9,
     Cylinder = 10,
     Cone = 11,
@@ -1238,6 +1244,55 @@ export class Heightfield extends Shape {
 }
 
 // #endif
+
+/**
+ * A shape that is a compound.
+ */
+export class Compound extends Shape {
+    readonly type = ShapeType.Compound;
+
+    /**
+     * The shapes constituting this compound shape.
+     */
+    shapes: CompoundShapePart[];
+
+    /**
+     * Creates a new heightfield shape.
+     *
+     * @param shapes - The shapes constituting this compound shape.
+     */
+    constructor(shapes: CompoundShapePart[]) {
+        super();
+        this.shapes = shapes;
+    }
+
+    public intoRaw(): RawShape {
+        const parts = this.shapes.map((part) => part.intoRaw());
+        let rawShape = RawShape.compound(parts);
+        return rawShape;
+    }
+}
+
+export class CompoundShapePart {
+    
+    isometry: Isometry;
+
+    shape: Shape;
+
+    constructor(isometry: Isometry, shape: Shape) {
+        this.isometry = isometry;
+        this.shape = shape;
+    }
+
+    public intoRaw(): RawCompoundShapePart {
+        let rawIsometry = IsometryOps.intoRaw(this.isometry);
+        let rawShape = this.shape.intoRaw();
+
+        let rawPart = new RawCompoundShapePart(rawIsometry, rawShape);
+
+        return rawPart;
+    }
+}
 
 // #if DIM3
 /**

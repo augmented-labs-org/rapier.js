@@ -1,4 +1,4 @@
-import {RawVector, RawRotation} from "./raw";
+import {RawVector, RawRotation, RawIsometry} from "./raw";
 // #if DIM3
 import {RawSdpMatrix3} from "./raw";
 // #endif
@@ -261,3 +261,39 @@ export class SdpMatrix3Ops {
 }
 
 // #endif
+
+/**
+ * An Isometry: a rotation followed by a translation.
+ */
+export interface Isometry {
+    rotation: Rotation;
+    position: Vector;
+}
+
+export class IsometryImpl implements Isometry {
+    rotation: Rotation;
+    position: Vector;
+
+    public constructor(rotation: Rotation, position: Vector) {
+        this.rotation = rotation;
+        this.position = position;
+    }
+}
+
+export class IsometryOps {
+    public static identity(): Isometry {
+        return new IsometryImpl(RotationOps.identity(), VectorOps.zeros());
+    }
+
+    public static fromRaw(raw: RawIsometry): Isometry | null {
+        if (!raw) return null;
+
+        let res = new IsometryImpl(RotationOps.fromRaw(raw.rotation())!, VectorOps.fromRaw(raw.translation())!);
+        raw.free();
+        return res;
+    }
+
+    public static intoRaw(isometry: Isometry): RawIsometry {
+        return new RawIsometry(RotationOps.intoRaw(isometry.rotation), VectorOps.intoRaw(isometry.position));
+    }
+}

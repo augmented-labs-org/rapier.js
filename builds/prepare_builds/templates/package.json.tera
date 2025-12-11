@@ -1,5 +1,5 @@
 {
-    "name": "@dimforge/{{ js_package_name }}",
+    "name": "@augmented-labs-org/{{ js_package_name }}",
     "description": "",
     "private": true,
     "exports": "./pkg",
